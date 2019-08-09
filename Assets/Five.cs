@@ -127,6 +127,22 @@ public class Five : MonoBehaviour
         return new Position(0, 0);
     }
 
+    public int Evaluate(bool is_ai)
+    {
+        var score_all_arr = new List<ScoreShape>();
+        int my_score = 0;
+        int ememy_score = 0;
+
+        for(int m=0; m<COLUMN; m++)
+        {
+            for(int n=0; n<ROW; n++)
+            {
+                if()
+            }
+        }
+        return 0;
+    }
+
     public int CalScore(int m, int n, Piece faction, int x_direct, int y_direct, List<ScoreShape> score_all_arr)
     {
         int add_score = 0;
@@ -216,6 +232,14 @@ public class Five : MonoBehaviour
         }
         return false;
     }
+
+    public Piece GetPiece(bool is_ai)
+    {
+        if (is_ai)
+            return Piece.WHITE;
+        return Piece.BLACK;
+    }
+    
 
     public bool Equal(Position p1, Position p2)
     {
