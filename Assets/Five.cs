@@ -11,7 +11,7 @@ public class Five : MonoBehaviour
         WHITE = 2
     }
 
-    
+
     public struct Position
     {
         public int x;
@@ -26,27 +26,27 @@ public class Five : MonoBehaviour
 
     public class Shape
     {
-        public int score;
+        public float score;
         public List<int> pieces = new List<int>();
-        public Shape(int score_, List<int> pieces_)
+        public Shape(float score_, List<int> pieces_)
         {
             score = score_;
             pieces = pieces_;
         }
-        
+
     }
 
     public class ScoreShape
     {
-        public int score = 0;
+        public float score = 0;
         public List<Position> pieces = new List<Position>();
         public int x_direct = 0;
         public int y_direct = 0;
         public bool Exist(Position pos)
         {
-            foreach(var item in pieces)
+            foreach (var item in pieces)
             {
-                if(item.x==pos.x && item.y==pos.y)
+                if (item.x == pos.x && item.y == pos.y)
                 {
                     return true;
                 }
@@ -60,7 +60,7 @@ public class Five : MonoBehaviour
     public const int COLUMN = 15;
     public const int ROW = 15;
     public const int DEPTH = 3;
-    int ratio = 1;
+    float ratio = 1;
 
     private List<Position> list1 = new List<Position>();
     private List<Position> list2 = new List<Position>();
@@ -73,12 +73,18 @@ public class Five : MonoBehaviour
     private List<Shape> shape_score = new List<Shape>();
     private int[,] board = new int[COLUMN, ROW];
 
+    public GameObject prefabBlack;
+    public GameObject prefabWhite;
+    public GameObject prefabCursor;
+    public GameObject panel;
+
     int change = 0;
     int g = 0;
-    
 
+    int search_count = 0;
+    int cut_count = 0;
     // Use this for initialization
-    void Start ()
+    void Start()
     {
         int[] scores = { 50, 50, 200, 500, 500, 5000, 5000, 5000, 5000, 5000, 5000, 50000, 99999999 };
         int[][] temp =
@@ -99,53 +105,169 @@ public class Five : MonoBehaviour
             new int[]{ 0, 1, 1, 1, 1, 0 },
             new int[]{ 1, 1, 1, 1, 1 },
         };
-        for(int i=0; i<scores.Length; i++)
+        for (int i = 0; i < scores.Length; i++)
         {
             shape_score.Add(new Shape(scores[i], new List<int>(temp[i])));
         }
-        
 
-        for(int i=0; i<COLUMN; i++)
+
+        for (int i = 0; i < COLUMN; i++)
         {
-            for(int j=0; j<ROW; j++)
+            for (int j = 0; j < ROW; j++)
             {
                 list_all.Add(new Position(i, j));
             }
         }
+
         
     }
-	
+
+    public Position GetPositionFromMouseInput(float x, float y)
+    {
+        float offset_x = 540 / 2 - 30 * 7;
+        float offset_y = 960 / 2 - 30 * 7;
+        int grid_x = Mathf.RoundToInt((x - offset_x) / 30);
+        int grid_y = Mathf.RoundToInt((y - offset_y) / 30);
+        return new Position(grid_x, grid_y);
+    }
+
 	// Update is called once per frame
 	void Update ()
     {
-		
+		if(Input.GetMouseButtonUp(0))
+        {
+            Debug.LogFormat("mouse {0}, {1}", Input.mousePosition.x, Input.mousePosition.y);
+            Position pos = GetPositionFromMouseInput(Input.mousePosition.x, Input.mousePosition.y);
+            Debug.LogFormat("grid {0}, {1}", pos.x, pos.y);
+            if(IsValid(pos))
+                Puton(Piece.BLACK, pos);
+        }
 	}
+
+    public void Puton(Piece piece, Position pos)
+    {
+        GameObject pieceObj = GameObject.Instantiate(piece==Piece.BLACK?prefabBlack:prefabWhite);
+        pieceObj.transform.parent = panel.transform;
+        float x = (pos.x - 7) * 30;
+        float y = (pos.y - 7) * 30;
+        pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
+
+    }
 
     public Position AI()
     {
-
-        return new Position(0, 0);
+        cut_count = 0;
+        search_count = 0;
+        NegaMax(true, DEPTH, -99999999, 99999999);
+        return next_point;        
     }
 
-    public int Evaluate(bool is_ai)
+    public float NegaMax(bool is_ai, int depth, float alpha, float beta)
+    {
+        if(GameWin(Piece.BLACK) || GameWin(Piece.WHITE) || depth==0)
+            return Evaluate(is_ai);
+
+        List<Position> blank_list = GetBlankList();
+        foreach(var next_step in blank_list)
+        {
+            search_count++;
+            if (!HasNeibour(next_step))
+                continue;
+
+            if (is_ai)
+                board[next_step.x, next_step.y] = (int)Piece.WHITE;
+            else
+                board[next_step.x, next_step.y] = (int)Piece.BLACK;
+
+            float value = -NegaMax(!is_ai, depth - 1, -beta, -alpha);
+            board[next_step.x, next_step.y] = 0;
+
+            if(value>alpha)
+            {
+                if (depth == DEPTH)
+                    next_point = next_step;
+
+                if(value>=beta)
+                {
+                    cut_count++;
+                    return beta;
+                }
+
+                alpha = value;
+            }
+
+        }
+        return alpha;
+    }
+
+    public List<Position> GetBlankList()
+    {
+        List<Position> blank_list = new List<Position>();
+        for (int m = 0; m < COLUMN; m++)
+        {
+            for (int n = 0; n < ROW; n++)
+            {
+                if (!HasPiece(new Position(m, n)))
+                    blank_list.Add(new Position(m, n));
+            }
+        }
+        return blank_list;
+    }
+
+    public bool HasNeibour(Position p)
+    {
+        for(int i=-1; i<=1; i++)
+        {
+            for(int j=0; j<=1; j++)
+            {
+                if (i == 0 && j == 0)
+                    continue;
+                int m = p.x + i;
+                int n = p.y + j;
+                if (HasPiece(new Position(m, n)))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    public float Evaluate(bool is_ai)
     {
         var score_all_arr = new List<ScoreShape>();
-        int my_score = 0;
-        int ememy_score = 0;
+        var score_all_arr_enemy = new List<ScoreShape>();
+        float my_score = 0;
+        float ememy_score = 0;
 
-        for(int m=0; m<COLUMN; m++)
+        Piece my_piece = GetPiece(is_ai);
+        Piece enemy_piece = GetEnemyPiece((Piece)my_piece);
+        for (int m=0; m<COLUMN; m++)
         {
             for(int n=0; n<ROW; n++)
             {
-                if()
+                if(board[m, n]==(int)my_piece)
+                {
+                    my_score += CalScore(m, n, my_piece, 0, 1, score_all_arr);
+                    my_score += CalScore(m, n, my_piece, 1, 0, score_all_arr);
+                    my_score += CalScore(m, n, my_piece, 1, 1, score_all_arr);
+                    my_score += CalScore(m, n, my_piece, -1, 1, score_all_arr);
+                }
+                else if(board[m, n] == (int)enemy_piece)
+                {
+                    ememy_score += CalScore(m, n, my_piece, 0, 1, score_all_arr_enemy);
+                    ememy_score += CalScore(m, n, my_piece, 1, 0, score_all_arr_enemy);
+                    ememy_score += CalScore(m, n, my_piece, 1, 1, score_all_arr_enemy);
+                    ememy_score += CalScore(m, n, my_piece, -1, 1, score_all_arr_enemy);
+                }
             }
         }
-        return 0;
+
+        float total_score = my_score + ememy_score * ratio * 0.1f;
+        return total_score;
     }
 
-    public int CalScore(int m, int n, Piece faction, int x_direct, int y_direct, List<ScoreShape> score_all_arr)
+    public float CalScore(int m, int n, Piece faction, int x_direct, int y_direct, List<ScoreShape> score_all_arr)
     {
-        int add_score = 0;
+        float add_score = 0;
         ScoreShape max_score_shape = new ScoreShape();
 
         foreach(var item in score_all_arr)
@@ -259,6 +381,14 @@ public class Five : MonoBehaviour
     public bool IsValid(Position pos)
     {
         return pos.x >= 0 && pos.y < COLUMN && pos.y >= 0 && pos.y < ROW;
+    }
+
+    public bool HasPiece(Position pos)
+    {
+        if (!IsValid(pos))
+            return false;
+
+        return board[pos.x, pos.y] != 0;
     }
 
     public bool IsPiece(Position pos, Piece piece)
