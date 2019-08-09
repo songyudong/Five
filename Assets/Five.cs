@@ -139,8 +139,12 @@ public class Five : MonoBehaviour
             Debug.LogFormat("mouse {0}, {1}", Input.mousePosition.x, Input.mousePosition.y);
             Position pos = GetPositionFromMouseInput(Input.mousePosition.x, Input.mousePosition.y);
             Debug.LogFormat("grid {0}, {1}", pos.x, pos.y);
-            if(IsValid(pos))
+            if (IsValid(pos))
+            {
                 Puton(Piece.BLACK, pos);
+                Position ai_pos = AI();
+                Puton(Piece.WHITE, ai_pos);
+            }
         }
 	}
 
@@ -151,7 +155,7 @@ public class Five : MonoBehaviour
         float x = (pos.x - 7) * 30;
         float y = (pos.y - 7) * 30;
         pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
-
+        board[pos.x, pos.y] = (int)piece;
     }
 
     public Position AI()
