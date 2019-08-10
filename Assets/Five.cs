@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.UI;
 public class Five : MonoBehaviour
 {
     public enum Piece
@@ -58,15 +58,11 @@ public class Five : MonoBehaviour
         }
     }
 
-    public const int GRID_WIDTH = 40;
+    public const int GRID_WIDTH = 30;
     public const int COLUMN = 15;
     public const int ROW = 15;
     public const int DEPTH = 3;
-    float ratio = 1;
-
-    private List<Position> list1 = new List<Position>();
-    private List<Position> list2 = new List<Position>();
-    private List<Position> list3 = new List<Position>();
+    float ratio = 2;
 
     Position next_point = new Position(0, 0);
 
@@ -80,6 +76,12 @@ public class Five : MonoBehaviour
 
     int search_count = 0;
     int cut_count = 0;
+
+    bool game_end = false;
+    bool ai_computing = false;
+
+    GameObject cursor = null;
+    public Text message = null;
 
     private Position last_puton = new Position(-1, -1);
     // Use this for initialization
@@ -109,41 +111,118 @@ public class Five : MonoBehaviour
             shape_score.Add(new Shape(scores[i], new List<int>(temp[i])));
         }
 
-        GameObject pieceObj = GameObject.Instantiate(prefabCursor);
+
+        Reset();
+
+    }
+
+    public void Reset()
+    {
+        for (int m = 0; m < COLUMN; m++)
+        {
+            for (int n = 0; n < ROW; n++)
+            {
+                board[m, n] = 0;
+            }
+        }
+
+        for (int i = 0; i < panel.transform.childCount; i++)
+        {
+            Destroy(panel.transform.GetChild(i).gameObject);
+        }
+
+        search_count = 0;
+        cut_count = 0;
+
+        game_end = false;
+
+        GameObject pieceObj = GameObject.Instantiate(prefabBlack);
         pieceObj.transform.parent = panel.transform;
         pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(0, 0, 0);
+        pieceObj.GetComponent<RectTransform>().localScale = new Vector3(0.3f, 0.3f, 0.3f);
+
+        message.text = "";
+    }
+    public void OnResetButtonClick()
+    {
+        Reset();
     }
 
     public Position GetPositionFromMouseInput(float x, float y)
     {
-        float offset_x = 540 / 2 - 30 * 7;
-        float offset_y = 960 / 2 - 30 * 7;
-        int grid_x = Mathf.RoundToInt((x - offset_x) / 30);
-        int grid_y = Mathf.RoundToInt((y - offset_y) / 30);
+        float offset_x = 540 / 2 - GRID_WIDTH * 7;
+        float offset_y = 960 / 2 - GRID_WIDTH * 7;
+        int grid_x = Mathf.RoundToInt((x - offset_x) / GRID_WIDTH);
+        int grid_y = Mathf.RoundToInt((y - offset_y) / GRID_WIDTH);
         return new Position(grid_x, grid_y);
     }
 
 	// Update is called once per frame
 	void Update ()
     {
-		if(Input.GetMouseButtonUp(0))
+		if(!game_end && !ai_computing && Input.GetMouseButtonUp(0))
         {            
             Position pos = GetPositionFromMouseInput(Input.mousePosition.x, Input.mousePosition.y);
             if (IsValid(pos))
             {
                 Puton(Piece.BLACK, pos);
-                Position ai_pos = AI();
-                Puton(Piece.WHITE, ai_pos);
+                PutonCursor(pos);
+                CheckGameEnd();
+
+                ai_computing = true;
+                StartCoroutine(DoAI(pos));
             }
         }
 	}
+
+    bool CheckGameEnd()
+    {
+        if (GameWin(Piece.BLACK))
+        {
+            message.text = "YOU WIN!";
+            game_end = true;
+            return true;
+        }
+        else if (GameWin(Piece.WHITE))
+        {
+            message.text = "YOU LOSE";
+            game_end = true;
+            return true;
+        }
+        return false;
+
+    }
+
+    IEnumerator DoAI(Position pos)
+    {
+       
+        yield return null;
+        Position ai_pos = AI();
+        Debug.LogFormat("AI detail search count:{0}, cut count:{1}", search_count, cut_count);
+        Puton(Piece.WHITE, ai_pos);
+        PutonCursor(ai_pos);        
+        CheckGameEnd();
+        ai_computing = false;
+
+    }
+
+    void PutonCursor(Position pos)
+    {
+        if (cursor != null)
+            Destroy(cursor);
+        cursor = GameObject.Instantiate(prefabCursor);
+        cursor.transform.parent = panel.transform;
+        float x = (pos.x - 7) * GRID_WIDTH;
+        float y = (pos.y - 7) * GRID_WIDTH;
+        cursor.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
+    }
 
     public void Puton(Piece piece, Position pos)
     {
         GameObject pieceObj = GameObject.Instantiate(piece==Piece.BLACK?prefabBlack:prefabWhite);
         pieceObj.transform.parent = panel.transform;
-        float x = (pos.x - 7) * 30;
-        float y = (pos.y - 7) * 30;
+        float x = (pos.x - 7) * GRID_WIDTH;
+        float y = (pos.y - 7) * GRID_WIDTH;
         pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
         board[pos.x, pos.y] = (int)piece;
         last_puton = pos;
@@ -170,9 +249,21 @@ public class Five : MonoBehaviour
                 continue;
 
             if (is_ai)
+            {
                 board[next_step.x, next_step.y] = (int)Piece.WHITE;
+                if(depth==DEPTH)
+                {
+                    if(CheckGameEnd())
+                    {
+                        next_point = next_step;
+                        return 99999999;
+                    }
+                }
+            }
             else
+            {
                 board[next_step.x, next_step.y] = (int)Piece.BLACK;
+            }
 
             float value = -NegaMax(!is_ai, depth - 1, -beta, -alpha);
             board[next_step.x, next_step.y] = 0;
@@ -234,7 +325,7 @@ public class Five : MonoBehaviour
     {
         for(int i=-1; i<=1; i++)
         {
-            for(int j=0; j<=1; j++)
+            for(int j=-1; j<=1; j++)
             {
                 if (i == 0 && j == 0)
                     continue;
