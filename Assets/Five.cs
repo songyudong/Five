@@ -22,6 +22,8 @@ public class Five : MonoBehaviour
             x = x_;
             y = y_;
         }
+
+        
     }
 
     public class Shape
@@ -66,8 +68,6 @@ public class Five : MonoBehaviour
     private List<Position> list2 = new List<Position>();
     private List<Position> list3 = new List<Position>();
 
-    private List<Position> list_all = new List<Position>();
-
     Position next_point = new Position(0, 0);
 
     private List<Shape> shape_score = new List<Shape>();
@@ -78,15 +78,14 @@ public class Five : MonoBehaviour
     public GameObject prefabCursor;
     public GameObject panel;
 
-    int change = 0;
-    int g = 0;
-
     int search_count = 0;
     int cut_count = 0;
+
+    private Position last_puton = new Position(-1, -1);
     // Use this for initialization
     void Start()
     {
-        int[] scores = { 50, 50, 200, 500, 500, 5000, 5000, 5000, 5000, 5000, 5000, 50000, 99999999 };
+        int[] scores = { 50, 50, 200, 500, 500, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 50000, 99999999 };
         int[][] temp =
         {
             new int[]{ 0, 1, 1, 0, 0 },
@@ -110,16 +109,9 @@ public class Five : MonoBehaviour
             shape_score.Add(new Shape(scores[i], new List<int>(temp[i])));
         }
 
-
-        for (int i = 0; i < COLUMN; i++)
-        {
-            for (int j = 0; j < ROW; j++)
-            {
-                list_all.Add(new Position(i, j));
-            }
-        }
-
-        
+        GameObject pieceObj = GameObject.Instantiate(prefabCursor);
+        pieceObj.transform.parent = panel.transform;
+        pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(0, 0, 0);
     }
 
     public Position GetPositionFromMouseInput(float x, float y)
@@ -135,10 +127,8 @@ public class Five : MonoBehaviour
 	void Update ()
     {
 		if(Input.GetMouseButtonUp(0))
-        {
-            Debug.LogFormat("mouse {0}, {1}", Input.mousePosition.x, Input.mousePosition.y);
+        {            
             Position pos = GetPositionFromMouseInput(Input.mousePosition.x, Input.mousePosition.y);
-            Debug.LogFormat("grid {0}, {1}", pos.x, pos.y);
             if (IsValid(pos))
             {
                 Puton(Piece.BLACK, pos);
@@ -156,6 +146,7 @@ public class Five : MonoBehaviour
         float y = (pos.y - 7) * 30;
         pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
         board[pos.x, pos.y] = (int)piece;
+        last_puton = pos;
     }
 
     public Position AI()
@@ -215,6 +206,27 @@ public class Five : MonoBehaviour
                     blank_list.Add(new Position(m, n));
             }
         }
+
+        if(IsValid(last_puton))
+        {
+            for(int i=-1; i<=1; i++)
+            {
+                for(int j=-1; j<=1; j++)
+                {
+                    if (i == 0 && j == 0)
+                        continue;
+                    int x = last_puton.x + i;
+                    int y = last_puton.y + j;
+                    if(IsValid(new Position(x, y)) && !HasPiece(new Position(x, y)))
+                    {
+
+                        var p = blank_list.Find(s => s.x == x && s.y == y);
+                        blank_list.Remove(p);
+                        blank_list.Insert(0, new Position(x, y));                     
+                    }
+                }
+            }
+        }
         return blank_list;
     }
 
@@ -257,15 +269,15 @@ public class Five : MonoBehaviour
                 }
                 else if(board[m, n] == (int)enemy_piece)
                 {
-                    ememy_score += CalScore(m, n, my_piece, 0, 1, score_all_arr_enemy);
-                    ememy_score += CalScore(m, n, my_piece, 1, 0, score_all_arr_enemy);
-                    ememy_score += CalScore(m, n, my_piece, 1, 1, score_all_arr_enemy);
-                    ememy_score += CalScore(m, n, my_piece, -1, 1, score_all_arr_enemy);
+                    ememy_score += CalScore(m, n, enemy_piece, 0, 1, score_all_arr_enemy);
+                    ememy_score += CalScore(m, n, enemy_piece, 1, 0, score_all_arr_enemy);
+                    ememy_score += CalScore(m, n, enemy_piece, 1, 1, score_all_arr_enemy);
+                    ememy_score += CalScore(m, n, enemy_piece, -1, 1, score_all_arr_enemy);
                 }
             }
         }
 
-        float total_score = my_score + ememy_score * ratio * 0.1f;
+        float total_score = my_score - ememy_score * ratio * 0.1f;
         return total_score;
     }
 
@@ -284,26 +296,30 @@ public class Five : MonoBehaviour
 
         for(int offset=-5; offset<=0; offset++)
         {
-            List<int> pos = new List<int>();
+            List<int> pos6 = new List<int>();
+            List<int> pos5 = new List<int>();
             for(int i=0; i<=5; i++)
             {
                 if(IsPiece(new Position(m + (i + offset) * x_direct, n + (i + offset) * y_direct), GetEnemyPiece(faction)))
                 {
-                    pos.Add(2);
+                    pos6.Add(2);
                 }
                 else if(IsPiece(new Position(m + (i + offset) * x_direct, n + (i + offset) * y_direct), faction))
                 {
-                    pos.Add(1);
+                    pos6.Add(1);
                 }
                 else
                 {
-                    pos.Add(0);
+                    pos6.Add(0);
                 }
             }
 
+            for (int c = 0; c < 5; c++)
+                pos5.Add(pos6[c]);
+
             foreach(var item in shape_score)
             {
-                if(Equal(pos, item.pieces))
+                if(Equal(pos5, item.pieces) || Equal(pos6, item.pieces))
                 {
                     if(item.score>max_score_shape.score)
                     {
@@ -384,7 +400,7 @@ public class Five : MonoBehaviour
 
     public bool IsValid(Position pos)
     {
-        return pos.x >= 0 && pos.y < COLUMN && pos.y >= 0 && pos.y < ROW;
+        return pos.x >= 0 && pos.x < COLUMN && pos.y >= 0 && pos.y < ROW;
     }
 
     public bool HasPiece(Position pos)
