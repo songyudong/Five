@@ -22,9 +22,52 @@ public class Five : MonoBehaviour
             x = x_;
             y = y_;
         }
-
-        
     }
+
+    enum ProfilerFunction
+    {
+        GET_BLANK_LIST = 0,
+        EVALUATE = 1,
+        CAL_SCORE = 2,
+        COUNT = 3,
+    }
+
+    class Profiler
+    {
+        public List<float> profiler = new List<float>();
+        public List<float> enter = new List<float>();
+        public List<int> count = new List<int>();
+        public void Init()
+        {
+            for (int i = 0; i < (int)ProfilerFunction.COUNT; i++)
+            {
+                profiler.Add(0);
+                enter.Add(0);
+                count.Add(0);
+            }
+        }
+        public void Reset()
+        {
+            for(int i=0; i<(int)ProfilerFunction.COUNT; i++)
+            {
+                profiler[i] = 0;
+                enter[i] = 0;
+                count[i] = 0;
+            }
+
+        }
+
+        public void Enter(ProfilerFunction func)
+        {
+            enter[(int)func] = Time.realtimeSinceStartup;
+        }
+
+        public void Leave(ProfilerFunction func)
+        {
+            count[(int)func]++;
+            profiler[(int)func] += Time.realtimeSinceStartup - enter[(int)func];
+        }
+    }   
 
     public class Shape
     {
@@ -84,6 +127,7 @@ public class Five : MonoBehaviour
     public Text message = null;
 
     private Position last_puton = new Position(-1, -1);
+    Profiler profiler = new Profiler();
     // Use this for initialization
     void Start()
     {
@@ -111,10 +155,11 @@ public class Five : MonoBehaviour
             shape_score.Add(new Shape(scores[i], new List<int>(temp[i])));
         }
 
-
+        profiler.Init();
         Reset();
-
     }
+
+    
 
     public void Reset()
     {
@@ -230,9 +275,15 @@ public class Five : MonoBehaviour
 
     public Position AI()
     {
+        profiler.Reset();
         cut_count = 0;
         search_count = 0;
+        float time = Time.realtimeSinceStartup;
         NegaMax(true, DEPTH, -99999999, 99999999);
+        float delta = Time.realtimeSinceStartup - time;
+        Debug.LogFormat("cost time {0} s", delta);
+        Debug.LogFormat("cal score {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.CAL_SCORE], profiler.count[(int)ProfilerFunction.CAL_SCORE]);
+        Debug.LogFormat("evaluate cost {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.EVALUATE], profiler.count[(int)ProfilerFunction.EVALUATE]);
         return next_point;        
     }
 
@@ -241,9 +292,10 @@ public class Five : MonoBehaviour
         if(GameWin(Piece.BLACK) || GameWin(Piece.WHITE) || depth==0)
             return Evaluate(is_ai);
 
-        List<Position> blank_list = GetBlankList();
-        foreach(var next_step in blank_list)
+        List<BlankPosition> blank_list = GetSortBlankList();
+        foreach(var bp in blank_list)
         {
+            var next_step = bp.pos;
             search_count++;
             if (!HasNeibour(next_step))
                 continue;
@@ -286,8 +338,38 @@ public class Five : MonoBehaviour
         return alpha;
     }
 
+    public struct BlankPosition
+    {
+        public float score;
+        public Position pos;
+    }
+
+    public List<BlankPosition> GetSortBlankList()
+    {
+        List<BlankPosition> blank_list = new List<BlankPosition>();
+        for (int m = 0; m < COLUMN; m++)
+        {
+            for (int n = 0; n < ROW; n++)
+            {
+                if (!HasPiece(new Position(m, n)))
+                {
+                    BlankPosition bp = new BlankPosition();
+                    bp.score = 0;
+                    if (Mathf.Abs(m - last_puton.x) <= 1 && Mathf.Abs(n - last_puton.y) <= 1)
+                        bp.score += 10;
+
+                    bp.pos = new Position(m, n);
+                    blank_list.Add(bp);
+                }
+            }
+        }
+
+        return blank_list;
+    }
+
     public List<Position> GetBlankList()
     {
+        profiler.Enter(ProfilerFunction.GET_BLANK_LIST);
         List<Position> blank_list = new List<Position>();
         for (int m = 0; m < COLUMN; m++)
         {
@@ -318,6 +400,7 @@ public class Five : MonoBehaviour
                 }
             }
         }
+        profiler.Leave(ProfilerFunction.GET_BLANK_LIST);
         return blank_list;
     }
 
@@ -340,6 +423,7 @@ public class Five : MonoBehaviour
 
     public float Evaluate(bool is_ai)
     {
+        profiler.Enter(ProfilerFunction.EVALUATE);
         var score_all_arr = new List<ScoreShape>();
         var score_all_arr_enemy = new List<ScoreShape>();
         float my_score = 0;
@@ -369,11 +453,13 @@ public class Five : MonoBehaviour
         }
 
         float total_score = my_score - ememy_score * ratio * 0.1f;
+        profiler.Leave(ProfilerFunction.EVALUATE);
         return total_score;
     }
 
     public float CalScore(int m, int n, Piece faction, int x_direct, int y_direct, List<ScoreShape> score_all_arr)
     {
+        profiler.Enter(ProfilerFunction.CAL_SCORE);
         float add_score = 0;
         ScoreShape max_score_shape = new ScoreShape();
 
@@ -381,6 +467,7 @@ public class Five : MonoBehaviour
         {
             if(item.Exist(new Position(m, n)) && item.x_direct==x_direct && item.y_direct == y_direct)
             {
+                profiler.Leave(ProfilerFunction.CAL_SCORE);
                 return 0;
             }
         }
@@ -448,6 +535,8 @@ public class Five : MonoBehaviour
 
             score_all_arr.Add(max_score_shape);
         }
+
+        profiler.Leave(ProfilerFunction.CAL_SCORE);
         return add_score + max_score_shape.score;
     }
 
