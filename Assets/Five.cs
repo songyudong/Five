@@ -209,10 +209,10 @@ public class Five : MonoBehaviour
 		if(!game_end && !ai_computing && Input.GetMouseButtonUp(0))
         {            
             Position pos = GetPositionFromMouseInput(Input.mousePosition.x, Input.mousePosition.y);
-            if (IsValid(pos))
+            if (IsValid(pos) && !HasPiece(pos))
             {
                 Puton(Piece.BLACK, pos);
-                PutonCursor(pos);
+                PutonCursor(pos, Piece.BLACK);
                 CheckGameEnd();
 
                 ai_computing = true;
@@ -246,21 +246,22 @@ public class Five : MonoBehaviour
         Position ai_pos = AI();
         Debug.LogFormat("AI detail search count:{0}, cut count:{1}", search_count, cut_count);
         Puton(Piece.WHITE, ai_pos);
-        PutonCursor(ai_pos);        
+        PutonCursor(ai_pos, Piece.WHITE);        
         CheckGameEnd();
         ai_computing = false;
 
     }
 
-    void PutonCursor(Position pos)
+    void PutonCursor(Position pos, Piece piece)
     {
         if (cursor != null)
             Destroy(cursor);
-        cursor = GameObject.Instantiate(prefabCursor);
+        cursor = GameObject.Instantiate(piece == Piece.BLACK ? prefabWhite : prefabBlack);
         cursor.transform.parent = panel.transform;
         float x = (pos.x - 7) * GRID_WIDTH;
         float y = (pos.y - 7) * GRID_WIDTH;
         cursor.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
+        cursor.GetComponent<RectTransform>().localScale = new Vector3(0.3f, 0.3f, 0.3f);
     }
 
     public void Puton(Piece piece, Position pos)
