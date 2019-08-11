@@ -126,7 +126,8 @@ public class Five : MonoBehaviour
     GameObject cursor = null;
     public Text message = null;
 
-    private Position last_puton = new Position(-1, -1);
+    private Position last_puton_black = new Position(-1, -1);
+    private Position last_puton_white = new Position(-1, -1);
     Profiler profiler = new Profiler();
     // Use this for initialization
     void Start()
@@ -270,7 +271,10 @@ public class Five : MonoBehaviour
         float y = (pos.y - 7) * GRID_WIDTH;
         pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
         board[pos.x, pos.y] = (int)piece;
-        last_puton = pos;
+        if (piece == Piece.BLACK)
+            last_puton_black = pos;
+        else
+            last_puton_white = pos;
     }
 
     public Position AI()
@@ -292,7 +296,7 @@ public class Five : MonoBehaviour
         if(GameWin(Piece.BLACK) || GameWin(Piece.WHITE) || depth==0)
             return Evaluate(is_ai);
 
-        List<BlankPosition> blank_list = GetSortBlankList();
+        List<BlankPosition> blank_list = GetSortBlankList(is_ai);
         foreach(var bp in blank_list)
         {
             var next_step = bp.pos;
@@ -344,7 +348,7 @@ public class Five : MonoBehaviour
         public Position pos;
     }
 
-    public List<BlankPosition> GetSortBlankList()
+    public List<BlankPosition> GetSortBlankList(bool is_ai)
     {
         List<BlankPosition> blank_list = new List<BlankPosition>();
         for (int m = 0; m < COLUMN; m++)
@@ -355,54 +359,25 @@ public class Five : MonoBehaviour
                 {
                     BlankPosition bp = new BlankPosition();
                     bp.score = 0;
-                    if (Mathf.Abs(m - last_puton.x) <= 1 && Mathf.Abs(n - last_puton.y) <= 1)
+                    if (last_puton_black.x >=0 && Mathf.Abs(m - last_puton_black.x) <= 1 && Mathf.Abs(n - last_puton_black.y) <= 1)
                         bp.score += 10;
+                    if (last_puton_white.x >=0 && Mathf.Abs(m - last_puton_white.x) <= 1 && Mathf.Abs(n - last_puton_white.y) <= 1)
+                        bp.score += 10;
+                    if (HasNeibour(new Position(m, n)))
+                        bp.score += 1;
 
                     bp.pos = new Position(m, n);
-                    blank_list.Add(bp);
+                    if(bp.score>0)
+                        blank_list.Add(bp);
                 }
             }
         }
 
+        blank_list.Sort((a, b) => -a.score.CompareTo(b.score));
         return blank_list;
     }
 
-    public List<Position> GetBlankList()
-    {
-        profiler.Enter(ProfilerFunction.GET_BLANK_LIST);
-        List<Position> blank_list = new List<Position>();
-        for (int m = 0; m < COLUMN; m++)
-        {
-            for (int n = 0; n < ROW; n++)
-            {
-                if (!HasPiece(new Position(m, n)))
-                    blank_list.Add(new Position(m, n));
-            }
-        }
-
-        if(IsValid(last_puton))
-        {
-            for(int i=-1; i<=1; i++)
-            {
-                for(int j=-1; j<=1; j++)
-                {
-                    if (i == 0 && j == 0)
-                        continue;
-                    int x = last_puton.x + i;
-                    int y = last_puton.y + j;
-                    if(IsValid(new Position(x, y)) && !HasPiece(new Position(x, y)))
-                    {
-
-                        var p = blank_list.Find(s => s.x == x && s.y == y);
-                        blank_list.Remove(p);
-                        blank_list.Insert(0, new Position(x, y));                     
-                    }
-                }
-            }
-        }
-        profiler.Leave(ProfilerFunction.GET_BLANK_LIST);
-        return blank_list;
-    }
+    
 
     public bool HasNeibour(Position p)
     {
