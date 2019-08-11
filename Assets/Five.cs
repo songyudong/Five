@@ -125,10 +125,16 @@ public class Five : MonoBehaviour
 
     GameObject cursor = null;
     public Text message = null;
+    public Text win = null;
+    public Text lose = null;
+    int win_count = 0;
+    int lose_count = 0;
 
     private Position last_puton_black = new Position(-1, -1);
     private Position last_puton_white = new Position(-1, -1);
     Profiler profiler = new Profiler();
+
+    public AudioSource sound = null;
     // Use this for initialization
     void Start()
     {
@@ -215,10 +221,16 @@ public class Five : MonoBehaviour
                 PutonCursor(pos, Piece.BLACK);
                 CheckGameEnd();
 
+                if (GameWin(Piece.BLACK) || GameWin(Piece.WHITE))
+                    return;
+
                 ai_computing = true;
                 StartCoroutine(DoAI(pos));
             }
         }
+
+        win.text = string.Format("Win:{0}", win_count);
+        lose.text = string.Format("Lose:{0}", lose_count);
 	}
 
     bool CheckGameEnd()
@@ -227,12 +239,14 @@ public class Five : MonoBehaviour
         {
             message.text = "YOU WIN!";
             game_end = true;
+            win_count++;
             return true;
         }
         else if (GameWin(Piece.WHITE))
         {
             message.text = "YOU LOSE";
             game_end = true;
+            lose_count++;
             return true;
         }
         return false;
@@ -240,16 +254,16 @@ public class Five : MonoBehaviour
     }
 
     IEnumerator DoAI(Position pos)
-    {
-       
+    {      
         yield return null;
         Position ai_pos = AI();
         Debug.LogFormat("AI detail search count:{0}, cut count:{1}", search_count, cut_count);
+        yield return new WaitForSeconds(0.1f);
         Puton(Piece.WHITE, ai_pos);
         PutonCursor(ai_pos, Piece.WHITE);        
         CheckGameEnd();
+        
         ai_computing = false;
-
     }
 
     void PutonCursor(Position pos, Piece piece)
@@ -276,6 +290,8 @@ public class Five : MonoBehaviour
             last_puton_black = pos;
         else
             last_puton_white = pos;
+
+        sound.Play();
     }
 
     public Position AI()
@@ -287,6 +303,7 @@ public class Five : MonoBehaviour
         NegaMax(true, DEPTH, -99999999, 99999999);
         float delta = Time.realtimeSinceStartup - time;
         Debug.LogFormat("cost time {0} s", delta);
+        Debug.LogFormat("get blank list {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.GET_BLANK_LIST], profiler.count[(int)ProfilerFunction.GET_BLANK_LIST]);
         Debug.LogFormat("cal score {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.CAL_SCORE], profiler.count[(int)ProfilerFunction.CAL_SCORE]);
         Debug.LogFormat("evaluate cost {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.EVALUATE], profiler.count[(int)ProfilerFunction.EVALUATE]);
         return next_point;        
@@ -310,7 +327,7 @@ public class Five : MonoBehaviour
                 board[next_step.x, next_step.y] = (int)Piece.WHITE;
                 if(depth==DEPTH)
                 {
-                    if(CheckGameEnd())
+                    if(GameWin(Piece.BLACK)||GameWin(Piece.WHITE))
                     {
                         next_point = next_step;
                         return 99999999;
@@ -349,8 +366,66 @@ public class Five : MonoBehaviour
         public Position pos;
     }
 
+    public void EvaBlankPosition(bool is_ai, BlankPosition bp)
+    {
+        Piece piece = is_ai ? Piece.WHITE : Piece.BLACK;
+        board[bp.pos.x, bp.pos.y] = (int)piece;
+
+        float score1 = CalBlankScore(bp.pos.x, bp.pos.y, piece, 0, 1);
+        float score2 = CalBlankScore(bp.pos.x, bp.pos.y, piece, 1, 0);
+        float score3 = CalBlankScore(bp.pos.x, bp.pos.y, piece, 1, 1);
+        float score4 = CalBlankScore(bp.pos.x, bp.pos.y, piece, -1, 1);
+        bp.score += Mathf.Max(score1, score2, score3, score4);
+        board[bp.pos.x, bp.pos.y] = 0;
+        
+    }
+
+    public float CalBlankScore(int m, int n, Piece faction, int x_direct, int y_direct)
+    {
+        float max_score = 0;
+        for (int offset = -5; offset <= 0; offset++)
+        {
+            List<int> pos6 = new List<int>();
+            List<int> pos5 = new List<int>();
+            for (int i = 0; i <= 5; i++)
+            {
+                if (IsPiece(new Position(m + (i + offset) * x_direct, n + (i + offset) * y_direct), GetEnemyPiece(faction)))
+                {
+                    pos6.Add(2);
+                }
+                else if (IsPiece(new Position(m + (i + offset) * x_direct, n + (i + offset) * y_direct), faction))
+                {
+                    pos6.Add(1);
+                }
+                else
+                {
+                    pos6.Add(0);
+                }
+            }
+
+            for (int c = 0; c < 5; c++)
+                pos5.Add(pos6[c]);
+
+            
+            for (int index = shape_score.Count - 1; index >= 0; index--)
+            {
+                var item = shape_score[index];
+                if (Equal(pos5, item.pieces) || Equal(pos6, item.pieces))
+                {
+                    if(item.score>max_score)
+                    {
+                        max_score = item.score;
+                        break;
+                    }
+                }
+            }
+        }
+        return max_score;
+    }
+
     public List<BlankPosition> GetSortBlankList(bool is_ai)
     {
+        profiler.Enter(ProfilerFunction.GET_BLANK_LIST);
         List<BlankPosition> blank_list = new List<BlankPosition>();
         for (int m = 0; m < COLUMN; m++)
         {
@@ -366,15 +441,17 @@ public class Five : MonoBehaviour
                         bp.score += 10;
                     if (HasNeibour(new Position(m, n)))
                         bp.score += 1;
-
+                    
                     bp.pos = new Position(m, n);
-                    if(bp.score>0)
+                    EvaBlankPosition(is_ai, bp);
+                    if (bp.score>0)
                         blank_list.Add(bp);
                 }
             }
         }
 
         blank_list.Sort((a, b) => -a.score.CompareTo(b.score));
+        profiler.Leave(ProfilerFunction.GET_BLANK_LIST);
         return blank_list;
     }
 
@@ -395,7 +472,7 @@ public class Five : MonoBehaviour
             }
         }
         return false;
-    }
+    }    
 
     public float Evaluate(bool is_ai)
     {
@@ -471,11 +548,12 @@ public class Five : MonoBehaviour
             for (int c = 0; c < 5; c++)
                 pos5.Add(pos6[c]);
 
-            foreach(var item in shape_score)
+            for(int index=shape_score.Count-1; index>=0; index--)
             {
-                if(Equal(pos5, item.pieces) || Equal(pos6, item.pieces))
+                var item = shape_score[index];
+                if (Equal(pos5, item.pieces) || Equal(pos6, item.pieces))
                 {
-                    if(item.score>max_score_shape.score)
+                    if (item.score > max_score_shape.score)
                     {
                         max_score_shape.score = item.score;
                         max_score_shape.pieces.Clear();
@@ -487,6 +565,7 @@ public class Five : MonoBehaviour
 
                         max_score_shape.x_direct = x_direct;
                         max_score_shape.y_direct = y_direct;
+                        break;
                     }
                 }
             }
