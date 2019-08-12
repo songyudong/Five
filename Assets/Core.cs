@@ -7,6 +7,8 @@ public partial class Five
     public Position AI()
     {
         profiler.Reset();
+        ClearLogger();
+
         cut_count = 0;
         search_count = 0;
         float time = Time.realtimeSinceStartup;
@@ -20,9 +22,10 @@ public partial class Five
     }
 
     public float NegaMax(bool is_ai, int depth, float alpha, float beta)
-    {
+    {        
         if (GameWin(Piece.BLACK) || GameWin(Piece.WHITE) || depth == 0)
-            return Evaluate(is_ai)*(is_ai?1:-1);
+            //return Evaluate(is_ai)*(is_ai?1:-1);
+            return Evaluate(is_ai);
 
         List<BlankPosition> blank_list = GetSortBlankList(is_ai);
         foreach (var bp in blank_list)
@@ -49,13 +52,23 @@ public partial class Five
                 board[next_step.x, next_step.y] = (int)Piece.BLACK;
             }
 
+            Output(string.Format("puton {0} {1}, color {2}", next_step.x, next_step.y, board[next_step.x, next_step.y]));
+
             float value = -NegaMax(!is_ai, depth - 1, -beta, -alpha);
+
+            Output(string.Format("value {0} depth {1} alpha {2} beta {3}", value, depth, alpha, beta));
+
             board[next_step.x, next_step.y] = 0;
 
             if (value > alpha)
             {
+                alpha = value;
+
                 if (depth == DEPTH)
+                {
                     next_point = next_step;
+                    Output(string.Format("** set next point {0} {1}", next_point.x, next_point.y));
+                }
 
                 if (value >= beta)
                 {
@@ -64,10 +77,12 @@ public partial class Five
                     break;
                 }
 
-                alpha = value;
+                
             }
 
         }
+
+        Output("-----------------------------------------");
         return alpha;
     }
 

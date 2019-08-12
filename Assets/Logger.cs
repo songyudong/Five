@@ -19,6 +19,11 @@ public partial class Five
         m_logFileInfo = new FileInfo(path);
     }
 
+    public void ClearLogger()
+    {
+        InitLogger();
+    }
+
     public void Output(string log)
     {
         var sw = m_logFileInfo.AppendText();
