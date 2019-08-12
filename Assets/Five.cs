@@ -136,6 +136,8 @@ public partial class Five : MonoBehaviour
 
     public void Reset()
     {
+        last_puton_black = new Position(-1, -1);
+        last_puton_white = new Position(-1, -1);
         for (int m = 0; m < COLUMN; m++)
         {
             for (int n = 0; n < ROW; n++)
