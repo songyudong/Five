@@ -67,8 +67,8 @@ public partial class Five : MonoBehaviour
     public const int GRID_WIDTH = 30;
     public const int COLUMN = 15;
     public const int ROW = 15;
-    public const int DEPTH = 1;
-    float ratio = 2;
+    public const int DEPTH = 2;
+    float ratio = 10;
 
     Position next_point = new Position(0, 0);
 
