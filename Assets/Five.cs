@@ -168,8 +168,8 @@ public partial class Five : MonoBehaviour
 
     public Position GetPositionFromMouseInput(float x, float y)
     {
-        float offset_x = 540 / 2 - GRID_WIDTH * 7;
-        float offset_y = 960 / 2 - GRID_WIDTH * 7;
+        float offset_x = Screen.width / 2 - GRID_WIDTH * (COLUMN/2);
+        float offset_y = Screen.height / 2 - GRID_WIDTH * (ROW/2);
         int grid_x = Mathf.RoundToInt((x - offset_x) / GRID_WIDTH);
         int grid_y = Mathf.RoundToInt((y - offset_y) / GRID_WIDTH);
         return new Position(grid_x, grid_y);
@@ -237,8 +237,8 @@ public partial class Five : MonoBehaviour
     {
         GameObject pieceObj = GameObject.Instantiate(piece==Piece.BLACK?prefabBlack:prefabWhite);
         pieceObj.transform.parent = panel.transform;
-        float x = (pos.x - 7) * GRID_WIDTH;
-        float y = (pos.y - 7) * GRID_WIDTH;
+        float x = (pos.x - (COLUMN/2)) * GRID_WIDTH;
+        float y = (pos.y - (ROW/2)) * GRID_WIDTH;
         pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
         board[pos.x, pos.y] = (int)piece;
         if (piece == Piece.BLACK)
