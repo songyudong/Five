@@ -22,7 +22,7 @@ public partial class Five
     public float NegaMax(bool is_ai, int depth, float alpha, float beta)
     {
         if (GameWin(Piece.BLACK) || GameWin(Piece.WHITE) || depth == 0)
-            return Evaluate(is_ai);
+            return Evaluate(is_ai)*(is_ai?1:-1);
 
         List<BlankPosition> blank_list = GetSortBlankList(is_ai);
         foreach (var bp in blank_list)
