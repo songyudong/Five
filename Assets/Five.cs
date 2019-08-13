@@ -65,6 +65,7 @@ public partial class Five : MonoBehaviour
         public Position pos;
     }
 
+    public const int MAX = 1000000;
     public const int GRID_WIDTH = 30;
     public const int COLUMN = 15;
     public const int ROW = 15;
@@ -110,32 +111,27 @@ public partial class Five : MonoBehaviour
     }
 
     public void InitConfigData()
-    {
-        int[] scores = { 50, 50, 200, 500, 500, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 50000, 99999999 };
-        int[][] temp =
-        {
-            new int[]{ 0, 1, 1, 0, 0 },
-            new int[]{ 0, 0, 1, 1, 0 },
-            new int[]{ 1, 1, 0, 1, 0 },
-            new int[]{ 0, 0, 1, 1, 1 },
-            new int[]{ 1, 1, 1, 0, 0 },
-            new int[]{ 0, 1, 1, 1, 0 },
-            new int[]{ 0, 1, 0, 1, 1, 0 },
-            new int[]{ 0, 1, 1, 0, 1, 0 },
-            new int[]{ 1, 1, 1, 0, 1 },
-            new int[]{ 1, 1, 0, 1, 1 },
-            new int[]{ 1, 0, 1, 1, 1 },
-            new int[]{ 1, 1, 1, 1, 0 },
-            new int[]{ 0, 1, 1, 1, 1 },
-            new int[]{ 0, 1, 1, 1, 1, 0 },
-            new int[]{ 1, 1, 1, 1, 1 },
-        };
-        for (int i = 0; i < scores.Length; i++)
-        {
-            shape_score.Add(new Shape(scores[i], new List<int>(temp[i])));
-        }
-    }
-    
+    {        
+        shape_score.Add(new Shape(50, new List<int>(new int[] { 0, 1, 1, 0, 0 })));
+        shape_score.Add(new Shape(50, new List<int>(new int[] { 0, 0, 1, 1, 0 })));
+        shape_score.Add(new Shape(200, new List<int>(new int[] { 1, 1, 0, 1, 0 })));
+
+        shape_score.Add(new Shape(500, new List<int>(new int[] { 0, 0, 1, 1, 1 })));
+        shape_score.Add(new Shape(500, new List<int>(new int[] { 1, 1, 1, 0, 0 })));
+        shape_score.Add(new Shape(5000, new List<int>(new int[] { 0, 1, 1, 1, 0 })));
+
+        shape_score.Add(new Shape(5000, new List<int>(new int[] { 0, 1, 0, 1, 1, 0 })));
+        shape_score.Add(new Shape(5000, new List<int>(new int[] { 0, 1, 1, 0, 1, 0 })));
+        shape_score.Add(new Shape(5000, new List<int>(new int[] { 1, 1, 1, 0, 1 })));
+
+        shape_score.Add(new Shape(5000, new List<int>(new int[] { 1, 1, 0, 1, 1 })));
+        shape_score.Add(new Shape(5000, new List<int>(new int[] { 1, 0, 1, 1, 1 })));
+        shape_score.Add(new Shape(5000, new List<int>(new int[] { 1, 1, 1, 1, 0 })));
+
+        shape_score.Add(new Shape(5000, new List<int>(new int[] { 0, 1, 1, 1, 1 })));
+        shape_score.Add(new Shape(50000, new List<int>(new int[] { 0, 1, 1, 1, 1, 0 })));
+        shape_score.Add(new Shape(MAX, new List<int>(new int[] { 1, 1, 1, 1, 1 })));
+    }   
 
     public void Reset()
     {
