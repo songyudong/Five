@@ -39,13 +39,13 @@ public partial class Five
 
         public void Enter(ProfilerFunction func)
         {
-            enter[(int)func] = Time.realtimeSinceStartup;
+            enter[(int)func] = System.DateTime.Now.Millisecond/1000.0f;
         }
 
         public void Leave(ProfilerFunction func)
         {
             count[(int)func]++;
-            profiler[(int)func] += Time.realtimeSinceStartup - enter[(int)func];
+            profiler[(int)func] += System.DateTime.Now.Millisecond/1000.0f - enter[(int)func];
         }
     }
 

@@ -11,9 +11,10 @@ public partial class Five
 
         cut_count = 0;
         search_count = 0;
-        float time = Time.realtimeSinceStartup;
+        //float time = Time.realtimeSinceStartup;
+        float time = System.DateTime.Now.Millisecond / 1000.0f;
         NegaMax(true, DEPTH, -99999999, 99999999);
-        float delta = Time.realtimeSinceStartup - time;
+        float delta = System.DateTime.Now.Millisecond / 1000.0f - time;
         Debug.LogFormat("cost time {0} s", delta);
         Debug.LogFormat("get blank list {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.GET_BLANK_LIST], profiler.count[(int)ProfilerFunction.GET_BLANK_LIST]);
         Debug.LogFormat("cal score {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.CAL_SCORE], profiler.count[(int)ProfilerFunction.CAL_SCORE]);

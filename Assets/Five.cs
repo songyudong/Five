@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 public partial class Five : MonoBehaviour
@@ -97,12 +98,14 @@ public partial class Five : MonoBehaviour
     private Position last_puton_white = new Position(-1, -1);    
 
     public AudioSource sound = null;
+    public GameObject thinking_object = null;
     // Use this for initialization
     void Start()
     {
         profiler.Init();
         InitLogger();
-        InitConfigData();        
+        InitConfigData();
+        record.Init();
         Reset();
     }
 
@@ -149,10 +152,7 @@ public partial class Five : MonoBehaviour
         for (int i = 0; i < panel.transform.childCount; i++)
         {
             Destroy(panel.transform.GetChild(i).gameObject);
-        }
-
-        search_count = 0;
-        cut_count = 0;
+        }        
 
         game_end = false;
 
@@ -162,6 +162,12 @@ public partial class Five : MonoBehaviour
         pieceObj.GetComponent<RectTransform>().localScale = new Vector3(0.3f, 0.3f, 0.3f);
 
         message.text = "";
+
+        record.Reset();
+
+        ShowThinking(false);
+
+        AIReset();
     }
     public void OnResetButtonClick()
     {
@@ -188,6 +194,7 @@ public partial class Five : MonoBehaviour
                 Puton(Piece.BLACK, pos);
                 PutonCursor(pos, Piece.BLACK);
                 CheckGameEnd();
+                record.Hand(Piece.BLACK, pos);
 
                 if (GameWin(Piece.BLACK) || GameWin(Piece.WHITE))
                     return;
@@ -291,18 +298,32 @@ public partial class Five : MonoBehaviour
             }
         }
         return false;
-    }
+    }    
 
+    public void ShowThinking(bool show)
+    {
+        thinking_object.SetActive(show);
+    }
     IEnumerator DoAI(Position pos)
     {
+        ShowThinking(true);
         yield return null;
-        Position ai_pos = AI();
+
+        //Position ai_pos = AI();
+        ai_start_flag = true;
+        while (ai_finish_flag == false)
+            yield return null;
+
+        ai_finish_flag = false;
+        Position ai_pos = aiPos;
+
         Debug.LogFormat("AI detail search count:{0}, cut count:{1}", search_count, cut_count);
         yield return new WaitForSeconds(0.1f);
         Puton(Piece.WHITE, ai_pos);
         PutonCursor(ai_pos, Piece.WHITE);
         CheckGameEnd();
-
+        record.Hand(Piece.WHITE, ai_pos);
+        ShowThinking(false);
         ai_computing = false;
     }
 }

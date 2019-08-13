@@ -14,14 +14,14 @@ public partial class Five
     {
         logFolder = Application.dataPath + "/..";
         path = logFolder + "/FiveLog.txt";
-        if(File.Exists(path))
-            File.Delete(path);
-        m_logFileInfo = new FileInfo(path);
+        
     }
 
     public void ClearLogger()
     {
-        InitLogger();
+        if (File.Exists(path))
+            File.Delete(path);
+        m_logFileInfo = new FileInfo(path);
     }
 
     public void Output(string log)
