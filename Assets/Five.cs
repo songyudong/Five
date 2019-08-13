@@ -195,6 +195,16 @@ public partial class Five : MonoBehaviour
         Reset();
     }
 
+    public void Regret()
+    {
+
+    }
+
+    public void OnRegretButtonClick()
+    {
+        Regret();
+    }
+
     public Position GetPositionFromMouseInput(float x, float y)
     {
         float offset_x = Screen.width / 2 - GRID_WIDTH * (COLUMN/2);
