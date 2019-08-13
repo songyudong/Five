@@ -12,7 +12,7 @@ public partial class Five
         cut_count = 0;
         search_count = 0;        
         float time = System.DateTime.Now.Millisecond / 1000.0f;
-        NegaMax(true, DEPTH, -MAX, MAX);
+        NegaMax(true, DEPTH, -float.MaxValue, float.MaxValue);
         float delta = System.DateTime.Now.Millisecond / 1000.0f - time;
         Debug.LogFormat("cost time {0} s", delta);
         Debug.LogFormat("get blank list {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.GET_BLANK_LIST], profiler.count[(int)ProfilerFunction.GET_BLANK_LIST]);
