@@ -23,10 +23,10 @@ public partial class Five
 
     public float NegaMax(bool is_ai, int depth, float alpha, float beta)
     {        
-        if (GameWin(Piece.BLACK) || GameWin(Piece.WHITE) || depth == 0)
-            //return Evaluate(is_ai)*(is_ai?1:-1);
+        if (GameWin(Piece.BLACK) || GameWin(Piece.WHITE) || depth == 0)            
             return Evaluate(is_ai);
 
+        Output(string.Format("++++++++++++++++++++++++++++++++++depth {0} alpha {1} beta {2}", depth, alpha, beta));
         List<BlankPosition> blank_list = GetSortBlankList(is_ai);
         foreach (var bp in blank_list)
         {
@@ -37,32 +37,27 @@ public partial class Five
 
             if (is_ai)
             {
-                board[next_step.x, next_step.y] = (int)Piece.WHITE;
-                /*if (depth == DEPTH)
-                {
-                    if (GameWin(Piece.BLACK) || GameWin(Piece.WHITE))
-                    {
-                        next_point = next_step;
-                        return 99999999;
-                    }
-                }*/
+                board[next_step.x, next_step.y] = (int)Piece.WHITE;                
             }
             else
             {
                 board[next_step.x, next_step.y] = (int)Piece.BLACK;
             }
 
-            Output(string.Format("puton {0} {1}, color {2}", next_step.x, next_step.y, board[next_step.x, next_step.y]));
+            Output(string.Format("[[[[[[[[[ puton {0} {1}, color {2}", next_step.x, next_step.y, board[next_step.x, next_step.y]));
 
             float value = -NegaMax(!is_ai, depth - 1, -beta, -alpha);
 
-            Output(string.Format("value {0} depth {1} alpha {2} beta {3}", value, depth, alpha, beta));
+            Output(string.Format("@@@@@@@@@@@@ value {0} depth {1}", value, depth));
 
             board[next_step.x, next_step.y] = 0;
+
+            Output(string.Format("]]]]]]]] remove {0} {1}", next_step.x, next_step.y));
 
             if (value > alpha)
             {
                 alpha = value;
+                Output(string.Format("!!!!!!!!!!modify alpha {0}", alpha));
 
                 if (depth == DEPTH)
                 {
@@ -72,17 +67,15 @@ public partial class Five
 
                 if (value >= beta)
                 {
-                    cut_count++;
-                    //return beta;
+                    Output(string.Format("|||||||||||||||||cut success beta {0}", beta));
+                    cut_count++;                    
                     break;
-                }
-
-                
+                }                
             }
 
         }
 
-        Output("-----------------------------------------");
+        Output(string.Format("-----------------------------------------alpha {0} beta {1}", alpha, beta));
         return alpha;
     }
 
