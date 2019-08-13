@@ -23,9 +23,7 @@ public partial class Five : MonoBehaviour
             x = x_;
             y = y_;
         }
-    }
-
-    
+    }   
 
     public class Shape
     {
@@ -100,9 +98,13 @@ public partial class Five : MonoBehaviour
 
     public AudioSource sound = null;
     public GameObject thinking_object = null;
+    public GameObject rule_root = null;
+    public GameObject prefabRule = null;
+
     // Use this for initialization
     void Start()
     {
+        CreateRules();
         profiler.Init();
         InitLogger();
         InitConfigData();
@@ -132,6 +134,29 @@ public partial class Five : MonoBehaviour
         shape_score.Add(new Shape(50000, new List<int>(new int[] { 0, 1, 1, 1, 1, 0 })));
         shape_score.Add(new Shape(MAX, new List<int>(new int[] { 1, 1, 1, 1, 1 })));
     }   
+
+    public void CreateRules()
+    {
+        for(int i=0; i<COLUMN; i++)
+        {
+            GameObject ruleObj = GameObject.Instantiate(prefabRule);
+            ruleObj.transform.parent = rule_root.transform;
+            float x = -265 + i*GRID_WIDTH;
+            float y = -456;
+            ruleObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
+            ruleObj.GetComponent<Text>().text = string.Format("{0}", i);
+        }
+
+        for (int i = 1; i < ROW; i++)
+        {
+            GameObject ruleObj = GameObject.Instantiate(prefabRule);
+            ruleObj.transform.parent = rule_root.transform;
+            float x = -278;
+            float y = -448 + i * GRID_WIDTH;
+            ruleObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
+            ruleObj.GetComponent<Text>().text = string.Format("{0}", i);
+        }
+    }
 
     public void Reset()
     {
