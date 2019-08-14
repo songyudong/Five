@@ -110,6 +110,8 @@ public partial class Five : MonoBehaviour
         InitConfigData();
         record.Init();
         Reset();
+
+        TestCases();
     }
 
     public void InitConfigData()
