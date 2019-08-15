@@ -285,6 +285,7 @@ public partial class Five : MonoBehaviour
         float y = (pos.y - (ROW/2)) * GRID_WIDTH;
         pieceObj.GetComponent<RectTransform>().localPosition = new Vector3(x, y, 0);
         board[pos.x, pos.y] = (int)piece;
+        transTable.Go(pos.x, pos.y, piece);
         if (piece == Piece.BLACK)
             last_puton_black = pos;
         else

@@ -49,11 +49,13 @@ public partial class Five
 
             if (is_ai)
             {
-                board[next_step.x, next_step.y] = (int)Piece.WHITE;                
+                board[next_step.x, next_step.y] = (int)Piece.WHITE;
+                transTable.Go(next_step.x, next_step.y, Piece.WHITE);
             }
             else
             {
                 board[next_step.x, next_step.y] = (int)Piece.BLACK;
+                transTable.Go(next_step.x, next_step.y, Piece.BLACK);
             }
 
             Output(string.Format("[[[[[[[[[ puton {0} {1}, color {2}", next_step.x, next_step.y, board[next_step.x, next_step.y]));
@@ -63,6 +65,15 @@ public partial class Five
             Output(string.Format("@@@@@@@@@@@@ value {0} depth {1}", value, depth));
 
             board[next_step.x, next_step.y] = 0;
+
+            if (is_ai)
+            {             
+                transTable.Go(next_step.x, next_step.y, Piece.WHITE);
+            }
+            else
+            {             
+                transTable.Go(next_step.x, next_step.y, Piece.BLACK);
+            }
 
             Output(string.Format("]]]]]]]] remove {0} {1}", next_step.x, next_step.y));
 
