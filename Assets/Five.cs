@@ -5,13 +5,13 @@ using UnityEngine;
 using UnityEngine.UI;
 public partial class Five : MonoBehaviour
 {
+    
     public enum Piece
     {
         EMPTY = 0,
         BLACK = 1,
         WHITE = 2
     }
-
 
     public struct Position
     {
@@ -67,7 +67,7 @@ public partial class Five : MonoBehaviour
     public const int GRID_WIDTH = 30;
     public const int COLUMN = 15;
     public const int ROW = 15;
-    public const int DEPTH = 2;
+    
     float ratio = 10;
 
     Position next_point = new Position(0, 0);
@@ -191,6 +191,8 @@ public partial class Five : MonoBehaviour
         ShowThinking(false);
 
         AIReset();
+
+        transTable.Init();
     }
     public void OnResetButtonClick()
     {

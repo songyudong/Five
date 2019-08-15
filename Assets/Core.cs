@@ -12,7 +12,7 @@ public partial class Five
         cut_count = 0;
         search_count = 0;        
         float time = System.DateTime.Now.Millisecond / 1000.0f;
-        NegaMax(true, DEPTH, -float.MaxValue, float.MaxValue);
+        NegaMax(true, config.depth, -float.MaxValue, float.MaxValue);
         float delta = System.DateTime.Now.Millisecond / 1000.0f - time;
         Debug.LogFormat("cost time {0} s", delta);
         Debug.LogFormat("get blank list {0} s, count {1}", profiler.profiler[(int)ProfilerFunction.GET_BLANK_LIST], profiler.count[(int)ProfilerFunction.GET_BLANK_LIST]);
@@ -23,6 +23,18 @@ public partial class Five
 
     public float NegaMax(bool is_ai, int depth, float alpha, float beta)
     {        
+        if(config.cache)
+        {
+            CacheItem item;
+            if(transTable.items.TryGetValue(transTable.code, out item))
+            {
+                if (item.depth >= depth)
+                {
+                    return item.score;
+                }
+            }
+        }
+
         if (GameWin(Piece.BLACK) || GameWin(Piece.WHITE) || depth == 0)            
             return Evaluate(is_ai);
 
@@ -59,7 +71,7 @@ public partial class Five
                 alpha = value;
                 Output(string.Format("!!!!!!!!!!modify alpha {0}", alpha));
 
-                if (depth == DEPTH)
+                if (depth == config.depth)
                 {
                     next_point = next_step;
                     Output(string.Format("** set next point {0} {1}", next_point.x, next_point.y));
@@ -75,6 +87,7 @@ public partial class Five
 
         }
 
+        transTable.Cache(depth, alpha);
         Output(string.Format("-----------------------------------------alpha {0} beta {1}", alpha, beta));
         return alpha;
     }

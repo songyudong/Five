@@ -4,8 +4,21 @@ using UnityEngine;
 
 public partial class Five
 {
+    public class CacheItem
+    {
+        public float score = 0;
+        public int depth = 0;
+        public CacheItem(int depth_, float score_)
+        {
+            depth = depth_;
+            score = score_;
+        }
+    }
+
     public class TransTable
     {
+        public Dictionary<int, CacheItem> items = new Dictionary<int, CacheItem>();
+
         public List<int> computer = new List<int>();
         public List<int> human = new List<int>();
 
@@ -18,6 +31,9 @@ public partial class Five
 
         public void Init()
         {
+            computer.Clear();
+            human.Clear();
+
             for(int i=0; i<COLUMN; i++)
             {
                 for(int j=0; j<ROW; j++)
@@ -36,5 +52,15 @@ public partial class Five
             code ^= (piece == Piece.BLACK ? human[index] : computer[index]);
             return code;
         }
+
+        public void Cache(int depth, float score)
+        {
+            items.Add(code, new CacheItem(depth, score));
+        }
+    
     }
+
+    public TransTable transTable = new TransTable();
+
+    
 }
