@@ -63,6 +63,19 @@ public partial class Five : MonoBehaviour
         public Position pos;
     }
 
+    public struct Hand
+    {
+        public GameObject obj;
+        public Piece piece;
+        public Position pos;
+        public Hand(GameObject obj_, Piece piece_, Position pos_)
+        {
+            obj = obj_;
+            piece = piece_;
+            pos = pos_;
+        }
+    }
+
     public const int MAX = 1000000;
     public const int GRID_WIDTH = 30;
     public const int COLUMN = 15;
@@ -100,6 +113,8 @@ public partial class Five : MonoBehaviour
     public GameObject thinking_object = null;
     public GameObject rule_root = null;
     public GameObject prefabRule = null;
+
+    public List<Hand> all_hands = new List<Hand>();
 
     // Use this for initialization
     void Start()
@@ -201,11 +216,30 @@ public partial class Five : MonoBehaviour
 
     public void Regret()
     {
+        if (all_hands.Count == 0)
+            return;
+        for(int i=all_hands.Count-1; i>=0; i--)
+        {
+            var pos = all_hands[i].pos;
+            board[pos.x, pos.y] = 0;
 
+            Destroy(all_hands[i].obj);
+            if (all_hands[i].piece == Piece.BLACK)
+            {
+                all_hands.RemoveAt(i);
+                break;
+            }
+            else
+            {
+                all_hands.RemoveAt(i);
+            }
+        }
     }
 
     public void OnRegretButtonClick()
     {
+        if (ai_computing)
+            return;
         Regret();
     }
 
@@ -291,6 +325,7 @@ public partial class Five : MonoBehaviour
         else
             last_puton_white = pos;
 
+        all_hands.Add(new Hand(pieceObj, piece, new Position(pos.x, pos.y)));
         sound.Play();
     }
 

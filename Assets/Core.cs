@@ -79,8 +79,10 @@ public partial class Five
 
             if (value > alpha)
             {
+                float old_alpha = alpha;
                 alpha = value;
-                Output(string.Format("!!!!!!!!!!modify alpha {0}", alpha));
+                
+                Output(string.Format("!!!!!!!!!!modify alpha {0} old alpha {1}", alpha, old_alpha));
 
                 if (depth == config.depth)
                 {

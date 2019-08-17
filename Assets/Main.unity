@@ -1130,7 +1130,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Reset
+  m_Text: 'Regret
+
+'
 --- !u!222 &1672318718
 CanvasRenderer:
   m_ObjectHideFlags: 0
